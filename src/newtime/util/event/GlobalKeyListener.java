@@ -13,7 +13,11 @@ public class GlobalKeyListener {
 
     public static void main(String[] args) {
         GlobalKeyListener gkl = new GlobalKeyListener();
-        gkl.hook();
+        try {
+            gkl.hook();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         gkl.addKeyListener(new KeyEventHook() {
             public void keyPressed(int keycode) {
@@ -37,11 +41,14 @@ public class GlobalKeyListener {
     private WinUser.LowLevelKeyboardProc lowLevelKeyboardProc;
 
     private Thread thread;
+    private boolean hooked = false;
 
-    public void hook(){
+    public void hook() {
+        if(this.isHooked()){
+            System.err.println("GlobalKeyListener is already hooked!");
+        }
         if(this.thread != null){
-            System.err.println("Already Hooked!");
-            return;
+            System.err.println("GlobalKeyListener not hooked but thread still active!");
         }
         this.thread = new Thread(new Runnable() {
             public void run() {
@@ -65,6 +72,13 @@ public class GlobalKeyListener {
 
                 hHook = User32.INSTANCE.SetWindowsHookEx(User32.WH_KEYBOARD_LL, lowLevelKeyboardProc, hMod, 0);
 
+                if(hHook == null){
+                    System.err.println("Could not create hook for GlobalKeyListener!");
+                    return;
+                }
+
+                hooked = true;
+
                 int result;
                 WinUser.MSG msg = new WinUser.MSG();
 
@@ -82,9 +96,15 @@ public class GlobalKeyListener {
     }
 
     public void unhook() {
+        hooked = false;
         User32.INSTANCE.PostQuitMessage(0);
         User32.INSTANCE.UnhookWindowsHookEx(this.hHook);
-        System.out.println("Unhooked");
+        try {
+            this.thread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        this.thread = null;
     }
 
     public boolean addKeyListener(KeyEventHook keyEventHook){
@@ -105,6 +125,10 @@ public class GlobalKeyListener {
         for(KeyEventHook keyEventHook : this.keyEventHooks){
             keyEventHook.keyReleased(keycode);
         }
+    }
+
+    public boolean isHooked(){
+        return this.hooked;
     }
 
 
