@@ -1,6 +1,6 @@
 package newtime.util.event;
 
-public interface NativeKeyListener {
+public interface KeyEventHook {
 
     public abstract void keyPressed(int keycode);
     public abstract void keyReleased(int keycode);

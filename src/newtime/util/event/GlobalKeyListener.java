@@ -15,7 +15,7 @@ public class GlobalKeyListener {
         GlobalKeyListener gkl = new GlobalKeyListener();
         gkl.hook();
 
-        gkl.addKeyListener(new NativeKeyListener() {
+        gkl.addKeyListener(new KeyEventHook() {
             public void keyPressed(int keycode) {
                 if(keycode == KeyEvent.VK_W){
                     System.out.println("W");
@@ -31,7 +31,7 @@ public class GlobalKeyListener {
         });
     }
 
-    private ArrayList<NativeKeyListener> keyListeners = new ArrayList<NativeKeyListener>();
+    private ArrayList<KeyEventHook> keyEventHooks = new ArrayList<KeyEventHook>();
 
     private WinUser.HHOOK hHook;
     private WinUser.LowLevelKeyboardProc lowLevelKeyboardProc;
@@ -76,36 +76,34 @@ public class GlobalKeyListener {
                         User32.INSTANCE.DispatchMessage(msg);
                     }
                 }
-
-                unhook();
             }
         });
         this.thread.start();
     }
 
     public void unhook() {
+        User32.INSTANCE.PostQuitMessage(0);
         User32.INSTANCE.UnhookWindowsHookEx(this.hHook);
-        this.thread.interrupt();
         System.out.println("Unhooked");
     }
 
-    public boolean addKeyListener(NativeKeyListener nativeKeyListener){
-        return this.keyListeners.add(nativeKeyListener);
+    public boolean addKeyListener(KeyEventHook keyEventHook){
+        return this.keyEventHooks.add(keyEventHook);
     }
 
-    public boolean removeKeyListener(NativeKeyListener nativeKeyListener){
-        return this.keyListeners.remove(nativeKeyListener);
+    public boolean removeKeyListener(KeyEventHook keyEventHook){
+        return this.keyEventHooks.remove(keyEventHook);
     }
 
     private void sendKeyPressedEvent(int keycode){
-        for(NativeKeyListener nativeKeyListener : this.keyListeners){
-            nativeKeyListener.keyPressed(keycode);
+        for(KeyEventHook keyEventHook : this.keyEventHooks){
+            keyEventHook.keyPressed(keycode);
         }
     }
 
     private void sendKeyReleasedEvent(int keycode){
-        for(NativeKeyListener nativeKeyListener : this.keyListeners){
-            nativeKeyListener.keyReleased(keycode);
+        for(KeyEventHook keyEventHook : this.keyEventHooks){
+            keyEventHook.keyReleased(keycode);
         }
     }
 
