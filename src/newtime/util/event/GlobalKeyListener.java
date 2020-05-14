@@ -46,9 +46,11 @@ public class GlobalKeyListener {
     public void hook() {
         if(this.isHooked()){
             System.err.println("GlobalKeyListener is already hooked!");
+            return;
         }
         if(this.thread != null){
             System.err.println("GlobalKeyListener not hooked but thread still active!");
+            return;
         }
         this.thread = new Thread(new Runnable() {
             public void run() {
