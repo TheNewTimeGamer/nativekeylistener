@@ -11,30 +11,6 @@ import java.util.ArrayList;
 
 public class GlobalKeyListener {
 
-    public static void main(String[] args) {
-        GlobalKeyListener gkl = new GlobalKeyListener();
-        try {
-            gkl.hook();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        gkl.addKeyListener(new KeyEventHook() {
-            public void keyPressed(int keycode) {
-                if(keycode == KeyEvent.VK_W){
-                    System.out.println("W");
-                }
-                if(keycode == KeyEvent.VK_ESCAPE){
-                    gkl.unhook();
-                }
-            }
-
-            public void keyReleased(int keycode) {
-
-            }
-        });
-    }
-
     private ArrayList<KeyEventHook> keyEventHooks = new ArrayList<KeyEventHook>();
 
     private WinUser.HHOOK hHook;
