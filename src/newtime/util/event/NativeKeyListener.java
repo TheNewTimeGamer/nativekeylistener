@@ -9,7 +9,7 @@ import com.sun.jna.platform.win32.WinUser;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-public class GlobalKeyListener implements Runnable {
+public class NativeKeyListener implements Runnable {
 
     private ArrayList<KeyEventHook> keyEventHooks = new ArrayList<KeyEventHook>();
 
