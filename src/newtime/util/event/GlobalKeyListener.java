@@ -9,7 +9,7 @@ import com.sun.jna.platform.win32.WinUser;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-public class GlobalKeyListener {
+public class GlobalKeyListener implements Runnable {
 
     private ArrayList<KeyEventHook> keyEventHooks = new ArrayList<KeyEventHook>();
 
@@ -28,50 +28,51 @@ public class GlobalKeyListener {
             System.err.println("GlobalKeyListener not hooked but thread still active!");
             return;
         }
-        this.thread = new Thread(new Runnable() {
-            public void run() {
-                WinDef.HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
-
-                lowLevelKeyboardProc = new WinUser.LowLevelKeyboardProc() {
-                    public WinDef.LRESULT callback(int nCode, WinDef.WPARAM wParam, WinUser.KBDLLHOOKSTRUCT kbdllhookstruct) {
-                        int value = wParam.intValue();
-                        int keycode = kbdllhookstruct.vkCode;
-
-                        if (value == 256) {
-                            sendKeyPressedEvent(keycode);
-                        } else if (value == 257) {
-                            sendKeyReleasedEvent(keycode);
-                        }
-
-                        long peer = Pointer.nativeValue(kbdllhookstruct.getPointer());
-                        return User32.INSTANCE.CallNextHookEx(hHook, nCode, wParam, new WinDef.LPARAM(peer));
-                    }
-                };
-
-                hHook = User32.INSTANCE.SetWindowsHookEx(User32.WH_KEYBOARD_LL, lowLevelKeyboardProc, hMod, 0);
-
-                if(hHook == null){
-                    System.err.println("Could not create hook for GlobalKeyListener!");
-                    return;
-                }
-
-                hooked = true;
-
-                int result;
-                WinUser.MSG msg = new WinUser.MSG();
-
-                while ((result = User32.INSTANCE.GetMessage(msg, null, 0, 0)) != 0) {
-                    if (result == -1) {
-                        break;
-                    } else {
-                        User32.INSTANCE.TranslateMessage(msg);
-                        User32.INSTANCE.DispatchMessage(msg);
-                    }
-                }
-            }
-        });
+        this.thread = new Thread(this);
         this.thread.start();
     }
+
+    public void run() {
+        WinDef.HMODULE hMod = Kernel32.INSTANCE.GetModuleHandle(null);
+
+        lowLevelKeyboardProc = new WinUser.LowLevelKeyboardProc() {
+            public WinDef.LRESULT callback(int nCode, WinDef.WPARAM wParam, WinUser.KBDLLHOOKSTRUCT kbdllhookstruct) {
+                int value = wParam.intValue();
+                int keycode = kbdllhookstruct.vkCode;
+
+                if (value == 256) {
+                    sendKeyPressedEvent(keycode);
+                } else if (value == 257) {
+                    sendKeyReleasedEvent(keycode);
+                }
+
+                long peer = Pointer.nativeValue(kbdllhookstruct.getPointer());
+                return User32.INSTANCE.CallNextHookEx(hHook, nCode, wParam, new WinDef.LPARAM(peer));
+            }
+        };
+
+        hHook = User32.INSTANCE.SetWindowsHookEx(User32.WH_KEYBOARD_LL, lowLevelKeyboardProc, hMod, 0);
+
+        if(hHook == null){
+            System.err.println("Could not create hook for GlobalKeyListener!");
+            return;
+        }
+
+        hooked = true;
+
+        int result;
+        WinUser.MSG msg = new WinUser.MSG();
+
+        while ((result = User32.INSTANCE.GetMessage(msg, null, 0, 0)) != 0) {
+            if (result == -1) {
+                break;
+            } else {
+                User32.INSTANCE.TranslateMessage(msg);
+                User32.INSTANCE.DispatchMessage(msg);
+            }
+        }
+    }
+
 
     public void unhook() {
         hooked = false;
